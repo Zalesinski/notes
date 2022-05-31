@@ -12,10 +12,9 @@ function App() {
 
   const dataFromLocalStorage = JSON.parse(localStorage.getItem('notes') || 'null');
 
-  const [note, setNote] = useState(defaultNoteState);
+  const [selectedNote, setSelectedNote] = useState(defaultNoteState);
   const [notesArray, setNotesArray] = useState(dataFromLocalStorage || []);
   const [editedNote, setEditedNote] = useState(null);
-
   const [searchValue, setSearchValue] = useState('')
 
   useEffect(() => {
@@ -23,11 +22,11 @@ function App() {
   }, [notesArray]);
 
   const handleEditTitle = (e) => {
-    setNote({...note, title: e.target.value});
+    setSelectedNote({...selectedNote, title: e.target.value});
   }
 
   const handleChangeEditor = (value) => {
-    setNote({...note, editor: value})
+    setSelectedNote({...selectedNote, editor: value})
   }
 
   const handleSearch = (e) => {
@@ -36,16 +35,21 @@ function App() {
 
   const handleSave = () => {
 
+    if (!selectedNote.title) {
+      alert('Введите название заметки');
+      return;
+    }
+
     if (editedNote) {
       const modified = [...notesArray];
       const index = notesArray.findIndex((note) => note.id === editedNote);
-      modified.splice(index, 1, note);
+      modified.splice(index, 1, selectedNote);
       setNotesArray([...modified]);
-    } else if (note.title) {
-      setNotesArray([...notesArray, note]);
+    } else {
+      setNotesArray([...notesArray, selectedNote]);
     }
 
-    setNote(defaultNoteState);
+    setSelectedNote(defaultNoteState);
     setEditedNote(null);
   }
 
@@ -58,18 +62,23 @@ function App() {
     const index = notesArray.findIndex((note) => note.id === id);
     modified.splice(index, 1);
 
+    if (id === selectedNote.id) {
+      setSelectedNote(defaultNoteState);
+    }
+
+    setEditedNote(null);
     setNotesArray([...modified]);
   }
 
   const handleSelect = (id) => {
     setEditedNote(id);
-    setNote(notesArray.find((note) => note.id === id));
+    setSelectedNote(notesArray.find((note) => note.id === id));
   }
 
   return (
     <section className="App">
       <TitleField
-        value={note.title}
+        value={selectedNote.title}
         onChangeTitle={handleEditTitle}
       />
       <SearchField
@@ -78,7 +87,7 @@ function App() {
       />
       <div className="editor">
         <Editor
-          value={note.editor}
+          value={selectedNote.editor}
           init={{
             height: 500,
             menubar: false
