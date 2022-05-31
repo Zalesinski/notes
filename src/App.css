@@ -6,6 +6,19 @@
   grid-column-gap: 10px;
 }
 
+@media (max-width: 768px) {
+  .App {
+    margin: 15px 15px;
+    grid-template-columns: 1fr;
+    grid-row-gap: 10px;
+    max-height: 100%;
+  }
+
+  .App > div:nth-child(2) {
+    grid-row: 3;
+  }
+}
+
 .editor {
   margin-top: 10px;
 }

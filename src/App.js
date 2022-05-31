@@ -1,31 +1,33 @@
-import './App.css';
+import { useEffect, useState } from "react";
+import { Editor } from "@tinymce/tinymce-react";
 import SearchField from "./components/search";
 import TitleField from "./components/title";
 import AddButton from "./components/add-button";
 import Note from "./components/note";
-import {useEffect, useState} from "react";
-import { Editor } from "@tinymce/tinymce-react";
+import './App.css';
 
 function App() {
 
+  const defaultNoteState = { id: Date.now(), title: '', editor: ''};
 
   const dataFromLocalStorage = JSON.parse(localStorage.getItem('notes') || 'null');
-  const [noteContent, setNoteContent] = useState({ title: '', editor: ''});
 
-  const [arr, setArr] = useState(dataFromLocalStorage || []);
-  const [savedIndex, setSavedIndex] = useState(false);
+  const [note, setNote] = useState(defaultNoteState);
+  const [notesArray, setNotesArray] = useState(dataFromLocalStorage || []);
+  const [editedNote, setEditedNote] = useState(null);
+
   const [searchValue, setSearchValue] = useState('')
 
-  useEffect(() => setToLocalStorage(), [arr]);
+  useEffect(() => {
+    (() => localStorage.setItem('notes', JSON.stringify(notesArray)))();
+  }, [notesArray]);
 
-  const setToLocalStorage = () => localStorage.setItem('notes', JSON.stringify(arr));
-
-  const handleEdit = (e) => {
-    setNoteContent({...noteContent, title: e.target.value});
+  const handleEditTitle = (e) => {
+    setNote({...note, title: e.target.value});
   }
 
   const handleChangeEditor = (value) => {
-    setNoteContent({...noteContent, editor: value})
+    setNote({...note, editor: value})
   }
 
   const handleSearch = (e) => {
@@ -33,36 +35,42 @@ function App() {
   }
 
   const handleSave = () => {
-    if (Number.isInteger(savedIndex)) {
-      const modified = [...arr];
-      modified.splice(savedIndex, 1, noteContent);
-      setArr([...modified]);
-    } else if (noteContent.title) {
-      setArr([...arr, noteContent]);
+
+    if (editedNote) {
+      const modified = [...notesArray];
+      const index = notesArray.findIndex((note) => note.id === editedNote);
+      modified.splice(index, 1, note);
+      setNotesArray([...modified]);
+    } else if (note.title) {
+      setNotesArray([...notesArray, note]);
     }
-    console.log('saved ' + arr)
-    setNoteContent({ title: '', editor: '' });
-    setSavedIndex(false);
+
+    setNote(defaultNoteState);
+    setEditedNote(null);
   }
 
-  const handleDelete = (index, e) => {
-    if (e) e.stopPropagation();
-    const modified = [...arr];
-    const del = modified.splice(index, 1);
-    console.log('deleted ' + del)
-    setArr([...modified]);
+  const handleDelete = (id, e) => {
+    if (e) {
+      e.stopPropagation()
+    }
+
+    const modified = [...notesArray];
+    const index = notesArray.findIndex((note) => note.id === id);
+    modified.splice(index, 1);
+
+    setNotesArray([...modified]);
   }
 
-  const handleSelect = (index) => {
-    setSavedIndex(index);
-    setNoteContent(arr[index]);
+  const handleSelect = (id) => {
+    setEditedNote(id);
+    setNote(notesArray.find((note) => note.id === id));
   }
 
   return (
     <section className="App">
       <TitleField
-        value={noteContent.title}
-        onChangeTitle={handleEdit}
+        value={note.title}
+        onChangeTitle={handleEditTitle}
       />
       <SearchField
         value={searchValue}
@@ -70,7 +78,7 @@ function App() {
       />
       <div className="editor">
         <Editor
-          value={noteContent.editor}
+          value={note.editor}
           init={{
             height: 500,
             menubar: false
@@ -80,13 +88,13 @@ function App() {
         <AddButton onClick={handleSave} />
       </div>
       <div>
-        {arr.length ? arr.filter(({title}) => title.toLowerCase().includes(searchValue)).map(({title}, index) => (
+        {notesArray.length ? notesArray.filter(({title}) => title.toLowerCase().includes(searchValue)).map(({id, title}) => (
           <Note
-            key={title}
+            key={id}
             title={title}
-            isSelected={index === savedIndex}
-            onDelete={(e) => handleDelete(index, e)}
-            onSelect={() => handleSelect(index)}
+            isSelected={id === editedNote}
+            onDelete={(e) => handleDelete(id, e)}
+            onSelect={() => handleSelect(id)}
           />
         )) : <p>Пока заметок нет...</p>}
       </div>
